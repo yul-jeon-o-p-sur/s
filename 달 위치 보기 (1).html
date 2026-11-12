@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>달 위치 보기</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Roboto:wght@400;500&display=swap">
+<style>
+:root{--bg:#f8f9fa;--sf:#fff;--tx:#202124;--sub:#5f6368;--ln:#dadce0;--bl:#1a73e8;--blb:#e8f0fe;--gr:#188038;--grb:#e6f4ea;--ch:#f1f3f4;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#202124;--sf:#2d2e31;--tx:#e8eaed;--sub:#9aa0a6;--ln:#444746;--bl:#8ab4f8;--blb:#32415c;--gr:#81c995;--grb:#1f3a2b;--ch:#3c4043;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#202124;--sf:#2d2e31;--tx:#e8eaed;--sub:#9aa0a6;--ln:#444746;--bl:#8ab4f8;--blb:#32415c;--gr:#81c995;--grb:#1f3a2b;--ch:#3c4043;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:400 15px/1.5 Roboto,"Noto Sans KR",system-ui,sans-serif}
+main{max-width:880px;margin:0 auto;padding:20px 16px 40px;display:grid;gap:16px}
+h1{font-size:24px;font-weight:500;margin:4px 0 0;letter-spacing:-.2px}
+.sub{color:var(--sub);margin:2px 0 0;font-size:14px}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:20px;padding:16px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.row+.row{margin-top:12px}
+.field{display:flex;flex-direction:column;gap:4px;flex:1 1 130px;min-width:0}
+.field span{font-size:12px;color:var(--sub);font-weight:500}
+input,select{font:inherit;color:var(--tx);background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:9px 12px;min-height:42px;width:100%}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--bl);outline-offset:1px;border-color:var(--bl)}
+.btn{font-weight:500;font-size:14px;font-family:inherit;border:0;border-radius:999px;background:var(--blb);color:var(--bl);padding:0 20px;min-height:42px;cursor:pointer;flex:0 0 auto}
+.btn:hover{filter:brightness(.96)}
+.hint{margin-top:10px;font-size:12px;color:var(--sub)}
+#sky svg{display:block;width:100%;height:auto;border-radius:14px}
+.sl{margin-top:14px}
+.sl-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font-size:13px;color:var(--sub)}
+.sl-top b{font-size:20px;font-weight:500;color:var(--tx)}
+input[type=range]{-webkit-appearance:none;appearance:none;padding:0;min-height:0;height:4px;border:0;border-radius:2px;background:linear-gradient(to right,var(--bl) var(--p,0%),var(--ln) 0)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--bl);border:0;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:grab}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--bl);border:0;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin-top:8px}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:720px){.grid{grid-template-columns:280px 1fr}}
+.moonbox{background:#0b1026;border-radius:14px;display:grid;place-items:center;padding:18px}
+.moonbox svg{width:min(190px,60vw);height:auto}
+.cap{margin-top:12px;text-align:center}
+.cap b{display:block;font-size:18px;font-weight:500}
+.cap small{color:var(--sub)}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-weight:500;font-size:14px;background:var(--ch);color:var(--sub)}
+.chip i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.chip.up{background:var(--grb);color:var(--gr)}
+.when{margin:8px 0 14px;font-size:13px;color:var(--sub)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.t{background:var(--bg);border-radius:14px;padding:12px 14px}
+.t.w{grid-column:1/-1}
+.t small{display:block;color:var(--sub);font-size:12px}
+.t b{font-size:20px;font-weight:500;line-height:1.35}
+.t em{font-style:normal;color:var(--sub);font-size:13px;margin-left:6px}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>달 위치 보기</h1>
+<p class="sub">날짜와 시간을 고르면 그때 달이 어디에, 어떤 모양으로 떠 있는지 보여줘요.</p>
+</header>
+
+<section class="card">
+<div class="row">
+<label class="field"><span>날짜</span><input type="date" id="date"></label>
+<label class="field"><span>시간</span><input type="time" id="time"></label>
+<button class="btn" id="now" type="button">지금 시간</button>
+</div>
+<div class="row">
+<label class="field" style="flex-basis:170px"><span>도시</span><select id="city"></select></label>
+<label class="field"><span>위도</span><input type="number" id="lat" step="0.0001" min="-90" max="90"></label>
+<label class="field"><span>경도</span><input type="number" id="lng" step="0.0001" min="-180" max="180"></label>
+</div>
+<div class="hint" id="tzinfo"></div>
+</section>
+
+<section class="card">
+<div id="sky"></div>
+<div class="sl">
+<div class="sl-top"><span>시간 슬라이더</span><b id="clock">00:00</b></div>
+<input type="range" id="slider" min="0" max="1440" step="1" value="0" aria-label="하루 중 시각(분)">
+<div class="ticks"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>24시</span></div>
+</div>
+</section>
+
+<div class="grid">
+<section class="card">
+<div class="moonbox" id="moon"></div>
+<div class="cap"><b id="mname"></b><small id="mage"></small></div>
+</section>
+<section class="card">
+<span class="chip" id="status"><i></i><span></span></span>
+<div class="when" id="when"></div>
+<div class="tiles">
+<div class="t w"><small>달 모양</small><b id="tshape"></b><em id="tbright"></em></div>
+<div class="t"><small>월출</small><b id="trise"></b></div>
+<div class="t"><small>월몰</small><b id="tset"></b></div>
+<div class="t"><small>방향</small><b id="taz"></b></div>
+<div class="t"><small>높이(고도)</small><b id="talt"></b></div>
+</div>
+</section>
+</div>
+</main>
+
+<script>
+const rad=Math.PI/180,DAY=864e5,E=rad*23.4397,H0=-0.833;
+const CITIES=[['서울',37.5665,126.978,'Asia/Seoul'],['부산',35.1796,129.0756,'Asia/Seoul'],['제주',33.4996,126.5312,'Asia/Seoul'],['도쿄',35.6762,139.6503,'Asia/Tokyo'],['베이징',39.9042,116.4074,'Asia/Shanghai'],['방콕',13.7563,100.5018,'Asia/Bangkok'],['싱가포르',1.3521,103.8198,'Asia/Singapore'],['시드니',-33.8688,151.2093,'Australia/Sydney'],['두바이',25.2048,55.2708,'Asia/Dubai'],['런던',51.5072,-0.1276,'Europe/London'],['파리',48.8566,2.3522,'Europe/Paris'],['뉴욕',40.7128,-74.006,'America/New_York'],['로스앤젤레스',34.0522,-118.2437,'America/Los_Angeles'],['상파울루',-23.5505,-46.6333,'America/Sao_Paulo']];
+const $=id=>document.getElementById(id);
+let st={lat:37.5665,lng:126.978,tz:'Asia/Seoul',name:'서울'},day={};
+
+/* ---------- 천문 계산 (간이 천체력, 오차 약 0.5° 이내) ---------- */
+const RA=(l,b)=>Math.atan2(Math.sin(l)*Math.cos(E)-Math.tan(b)*Math.sin(E),Math.cos(l));
+const DEC=(l,b)=>Math.asin(Math.sin(b)*Math.cos(E)+Math.cos(b)*Math.sin(E)*Math.sin(l));
+const days=t=>t/DAY-0.5+2440588-2451545;
+function moonC(d){const L=rad*(218.316+13.176396*d),M=rad*(134.963+13.064993*d),F=rad*(93.272+13.22935*d),l=L+rad*6.289*Math.sin(M),b=rad*5.128*Math.sin(F);return{ra:RA(l,b),dec:DEC(l,b),dist:385001-20905*Math.cos(M)}}
+function sunC(d){const M=rad*(357.5291+0.98560028*d),C=rad*(1.9148*Math.sin(M)+0.02*Math.sin(2*M)+0.0003*Math.sin(3*M)),l=M+C+rad*102.9372+Math.PI;return{ra:RA(l,0),dec:DEC(l,0),dist:149598000}}
+function altaz(c,d,lat,lng){const H=rad*(280.16+360.9856235*d)+rad*lng-c.ra,p=rad*lat;
+let alt=Math.asin(Math.sin(p)*Math.sin(c.dec)+Math.cos(p)*Math.cos(c.dec)*Math.cos(H));
+const az=Math.atan2(Math.sin(H),Math.cos(H)*Math.sin(p)-Math.tan(c.dec)*Math.cos(p));
+if(c.dist<1e7)alt-=Math.asin(6378.14/c.dist)*Math.cos(alt);
+return{alt:alt/rad,az:(az/rad+180+360)%360}}
+function pos(t){const d=days(t);return altaz(moonC(d),d,st.lat,st.lng)}
+function sunAlt(t){const d=days(t);return altaz(sunC(d),d,st.lat,st.lng).alt}
+function phase(t){const d=days(t),m=moonC(d),s=sunC(d),ph=Math.acos(Math.sin(s.dec)*Math.sin(m.dec)+Math.cos(s.dec)*Math.cos(m.dec)*Math.cos(s.ra-m.ra)),
+inc=Math.atan2(s.dist*Math.sin(ph),m.dist-s.dist*Math.cos(ph)),ang=Math.atan2(Math.cos(s.dec)*Math.sin(s.ra-m.ra),Math.sin(s.dec)*Math.cos(m.dec)-Math.cos(s.dec)*Math.sin(m.dec)*Math.cos(s.ra-m.ra));
+return{frac:(1+Math.cos(inc))/2,p:0.5+0.5*inc*(ang<0?-1:1)/Math.PI}}
+function pname(p){return p<.03||p>=.97?'삭 (신월)':p<.22?'초승달':p<.28?'상현달':p<.47?'차오르는 달 (상현망간)':p<.53?'보름달':p<.72?'기우는 달 (하현망간)':p<.78?'하현달':'그믐달'}
+const DIRS=['북','북동','동','남동','남','남서','서','북서'];
+const dirName=a=>DIRS[Math.round(a/45)%8]+'쪽';
+
+/* ---------- 시간대 ---------- */
+function tzOff(ms,tz){const o={};new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'numeric',second:'numeric'}).formatToParts(ms).forEach(x=>o[x.type]=+x.value);return Date.UTC(o.year,o.month-1,o.day,o.hour%24,o.minute,o.second)-Math.floor(ms/1000)*1000}
+function zoned(y,m,d,h,mi,tz){const w=Date.UTC(y,m-1,d,h,mi);let t=w-tzOff(w,tz);return w-tzOff(t,tz)}
+const fmt=ms=>new Intl.DateTimeFormat('ko-KR',{timeZone:st.tz,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(ms);
+function nowParts(tz){const o={};new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).formatToParts(Date.now()).forEach(x=>o[x.type]=x.value);return o}
+
+/* ---------- 달 그리기 ---------- */
+function moonSVG(id,p,flip){
+const r=48,c=Math.cos(2*Math.PI*p),rx=(Math.abs(c)*r).toFixed(2),wax=p<.5,s1=wax?1:0,s2=wax?(c>0?0:1):(c<0?0:1);
+const lit=`M0 ${-r}A${r} ${r} 0 0 ${s1} 0 ${r}A${rx} ${r} 0 0 ${s2} 0 ${-r}Z`;
+return`<svg viewBox="-52 -52 104 104" xmlns="http://www.w3.org/2000/svg"><defs>
+<radialGradient id="g${id}" cx=".4" cy=".38" r=".7"><stop offset="0" stop-color="#f4f1e8"/><stop offset=".75" stop-color="#d9d5c8"/><stop offset="1" stop-color="#a9a597"/></radialGradient>
+<clipPath id="c${id}"><circle r="${r}"/></clipPath>
+<filter id="b${id}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+<filter id="s${id}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.5"/></filter></defs>
+<g clip-path="url(#c${id})" transform="${flip?'rotate(180)':''}"><circle r="${r}" fill="url(#g${id})"/>
+<g filter="url(#b${id})" fill="#7f7c75" opacity=".5"><ellipse cx="-14" cy="-20" rx="14" ry="10"/><ellipse cx="6" cy="-24" rx="8" ry="7"/><ellipse cx="14" cy="-8" rx="9" ry="7"/><ellipse cx="-30" cy="0" rx="9" ry="16"/><ellipse cx="-18" cy="18" rx="10" ry="7"/><ellipse cx="36" cy="-10" rx="4" ry="6"/><ellipse cx="2" cy="6" rx="6" ry="5"/></g>
+<g fill="#6d6a63" opacity=".28"><circle cx="-4" cy="32" r="3"/><circle cx="22" cy="20" r="2.5"/><circle cx="-26" cy="-8" r="2"/><circle cx="28" cy="34" r="2"/></g>
+<path d="M-60 -60H60V60H-60Z${lit}" fill-rule="evenodd" fill="#04060c" opacity=".9" filter="url(#s${id})"/></g></svg>`}
+
+/* ---------- 하늘 장면 ---------- */
+const KF=[[-18,'#0b1026','#1a2347'],[-12,'#131a3c','#2b3a6e'],[-6,'#2a3a72','#9a6f9c'],[0,'#4a6cb3','#f4a96a'],[8,'#4f8fe0','#bcdcf7'],[20,'#3d86e0','#9fd0f7']];
+const hx=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+const mix=(a,b,f)=>'rgb('+hx(a).map((v,i)=>Math.round(v+(hx(b)[i]-v)*f)).join(',')+')';
+function skyCols(a){if(a<=KF[0][0])return[KF[0][1],KF[0][2]];if(a>=KF[5][0])return[KF[5][1],KF[5][2]];
+for(let i=0;i<5;i++)if(a<KF[i+1][0]){const f=(a-KF[i][0])/(KF[i+1][0]-KF[i][0]);return[mix(KF[i][1],KF[i+1][1],f),mix(KF[i][2],KF[i+1][2],f)]}}
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const STARS=Array.from({length:70},()=>[rnd()*700,rnd()*290,rnd()*1.3+.4,rnd()*.5+.5]);
+const CX=350,R=310,HY=300;
+function xy(az,alt){const a=az*rad,h=alt*rad,up=Math.sin(h);return[CX-R*Math.cos(h)*Math.sin(a),up>=0?HY-R*up:HY+Math.min(40,8-R*up*.25)]}
+
+function drawSky(t,m,ph){
+const sa=sunAlt(t),[c1,c2]=skyCols(sa),dark=Math.max(0,Math.min(1,(-6-sa)/10)),up=m.alt>=H0,[mx,my]=xy(m.az,m.alt);
+let s=`<svg viewBox="0 0 700 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="하늘에서 달의 위치"><defs>
+<linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
+<radialGradient id="halo"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+<rect width="700" height="360" fill="url(#sk)"/>`;
+if(dark>0)s+=STARS.map(a=>`<circle cx="${a[0].toFixed(0)}" cy="${a[1].toFixed(0)}" r="${a[2].toFixed(1)}" fill="#fff" opacity="${(a[3]*dark).toFixed(2)}"/>`).join('');
+s+=`<path d="M40 ${HY}A${R} ${R} 0 0 1 660 ${HY}" fill="none" stroke="#fff" stroke-opacity=".28" stroke-dasharray="3 7" stroke-width="2"/>
+<path d="${day.path}" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="2.5" stroke-dasharray="7 6" stroke-linecap="round"/>`;
+if(up)s+=`<circle cx="${mx}" cy="${my}" r="64" fill="url(#halo)" opacity="${(.25+ph.frac*.75).toFixed(2)}"/>`;
+s+=`<rect y="${HY}" width="700" height="60" fill="#05080f" opacity="${up?.55:.78}"/><line x1="0" x2="700" y1="${HY}" y2="${HY}" stroke="#fff" stroke-opacity=".7" stroke-width="2"/>
+<g fill="#fff" font-size="17" font-weight="500" text-anchor="middle" opacity=".9"><text x="40" y="${HY+22}">동</text><text x="350" y="${HY+22}">남</text><text x="660" y="${HY+22}">서</text></g>`;
+[['월출',day.rise],['월몰',day.set]].forEach(([n,e])=>{if(e){const[x]=xy(e.az,0);s+=`<circle cx="${x}" cy="${HY}" r="5" fill="#fff"/><text x="${Math.max(50,Math.min(650,x))}" y="${HY+48}" fill="#fff" font-size="15" text-anchor="middle" opacity=".85">${n} ${fmt(e.t)}</text>`}});
+s+=`<g opacity="${up?1:.38}"><svg x="${mx-28}" y="${my-28}" width="56" height="56">${moonSVG('s',ph.p,st.lat<0).replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'')}</svg></g>`;
+return s.replace('<svg x=','<svg viewBox="-52 -52 104 104" x=')+`<text x="18" y="32" fill="#fff" font-size="16" opacity=".85">${up?'달이 떠 있어요':'달이 지평선 아래에 있어요'}</text></svg>`}
+
+/* ---------- 계산/렌더 ---------- */
+function compute(){
+const[y,m,d]=$('date').value.split('-').map(Number);if(!y)return;
+const a=zoned(y,m,d,0,0,st.tz),b=zoned(y,m+0,d+1,0,0,st.tz),n=Math.round((b-a)/3e5);
+const pts=[];for(let i=0;i<=n;i++){const t=a+(b-a)*i/n;pts.push({t,...pos(t)})}
+let path='',open=false,rise=null,set=null;
+pts.forEach((p,i)=>{const q=pts[i-1];
+if(q&&(q.alt>=H0)!==(p.alt>=H0)){const f=(H0-q.alt)/(p.alt-q.alt),t=q.t+f*(p.t-q.t),c=pos(t),ri=p.alt>=H0,[x,yy]=xy(c.az,0);
+if(ri){if(!rise)rise={t,az:c.az}}else if(!set)set={t,az:c.az};path+=(ri?'M':'L')+x.toFixed(1)+' '+yy.toFixed(1);open=ri}
+if(p.alt>=H0){const[x,yy]=xy(p.az,p.alt);path+=(open?'L':'M')+x.toFixed(1)+' '+yy.toFixed(1);open=true}});
+day={y,m,d,path,rise,set};render()}
+
+function render(){
+if(!day.y)return;const mins=+$('slider').value,{y,m,d}=day,t=zoned(y,m,d,Math.floor(mins/60),mins%60,st.tz);
+const p=pos(t),ph=phase(t),up=p.alt>=H0,hh=String(Math.min(24,Math.floor(mins/60))).padStart(2,'0'),mm=String(mins%60).padStart(2,'0');
+$('clock').textContent=hh+':'+mm;$('slider').style.setProperty('--p',(mins/14.4)+'%');
+$('time').value=mins>=1440?'23:59':hh+':'+mm;
+$('sky').innerHTML=drawSky(t,p,ph);
+$('moon').innerHTML=moonSVG('m',ph.p,st.lat<0);
+const nm=pname(ph.p),br=Math.round(ph.frac*100);
+$('mname').textContent=nm;$('mage').textContent='월령 '+(ph.p*29.53).toFixed(1)+'일';
+const sc=$('status');sc.className='chip'+(up?' up':'');sc.lastChild.textContent=up?'지금 떠 있어요':'지금은 져 있어요';
+const wd=new Date(Date.UTC(y,m-1,d)).toLocaleDateString('ko-KR',{timeZone:'UTC',year:'numeric',month:'long',day:'numeric',weekday:'short'});
+$('when').textContent=st.name+' · '+wd+' '+hh+':'+mm;
+$('tshape').textContent=nm;$('tbright').textContent='밝기 '+br+'%';
+$('trise').textContent=day.rise?fmt(day.rise.t):'없음';$('tset').textContent=day.set?fmt(day.set.t):'없음';
+$('taz').innerHTML=dirName(p.az)+'<em>'+Math.round(p.az)+'°</em>';
+$('talt').innerHTML=up?p.alt.toFixed(1)+'°':'지평선 아래<em>'+p.alt.toFixed(1)+'°</em>'}
+
+/* ---------- 입력 연결 ---------- */
+function nearestTz(lat,lng){let b=CITIES[0],bd=1e9;CITIES.forEach(c=>{const dl=Math.abs(c[2]-lng),dd=Math.hypot(c[1]-lat,Math.min(dl,360-dl)*Math.cos(lat*rad)),k=dd;if(k<bd){bd=k;b=c}});return b[3]}
+function tzLabel(){const o=tzOff(Date.now(),st.tz)/36e5;$('tzinfo').textContent='시간대 '+st.tz+' (UTC'+(o>=0?'+':'')+o+') 기준으로 시간을 읽어요.'}
+function setCity(i){const c=CITIES[i];st={lat:c[1],lng:c[2],tz:c[3],name:c[0]};$('lat').value=c[1];$('lng').value=c[2];tzLabel();compute()}
+function custom(){const la=parseFloat($('lat').value),ln=parseFloat($('lng').value);
+if(isNaN(la)||isNaN(ln)||Math.abs(la)>90||Math.abs(ln)>180)return;
+$('city').value='custom';st={lat:la,lng:ln,tz:nearestTz(la,ln),name:'위도 '+la+'°, 경도 '+ln+'°'};tzLabel();compute()}
+function setNow(){const o=nowParts(st.tz);$('date').value=o.year+'-'+o.month+'-'+o.day;compute();$('slider').value=(+o.hour)*60+(+o.minute);render()}
+
+$('city').innerHTML=CITIES.map((c,i)=>`<option value="${i}">${c[0]}</option>`).join('')+'<option value="custom">직접 입력</option>';
+$('city').onchange=e=>{if(e.target.value!=='custom')setCity(+e.target.value)};
+$('lat').onchange=$('lng').onchange=custom;
+$('date').onchange=()=>{compute()};
+$('time').onchange=e=>{const[h,m]=e.target.value.split(':').map(Number);if(!isNaN(h)){$('slider').value=h*60+m;render()}};
+$('slider').oninput=render;
+$('now').onclick=setNow;
+setCity(0);setNow();
+</script>
+</body>
+</html>
